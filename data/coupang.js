@@ -52,7 +52,7 @@ window.WIKI_DATA.coupang = [
     ],
     "updated": "2026-07-07",
     "last_verified": "2026-07-07",
-    "pinned": true
+    "pinned": false
   },
   {
     "id": "coupang-review-transfer",
