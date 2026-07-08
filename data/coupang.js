@@ -51,7 +51,8 @@ window.WIKI_DATA.coupang = [
       "사진"
     ],
     "updated": "2026-07-07",
-    "last_verified": "2026-07-07"
+    "last_verified": "2026-07-07",
+    "pinned": true
   },
   {
     "id": "coupang-review-transfer",
