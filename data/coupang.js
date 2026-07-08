@@ -37,6 +37,7 @@ window.WIKI_DATA.coupang = [
     "title": "쿠팡이츠 무료 이미지 촬영 동의서",
     "effective_date": null,
     "content": "쿠팡이츠에서 무료 이미지 촬영을 1회 제공. 촬영 희망 시 아래 동의서 작성 필요.",
+    "copy_text": "안녕하세요, 사장님. 쿠팡이츠에서 매장 메뉴 무료 이미지 촬영을 1회 지원하고 있습니다. 촬영을 희망하시는 경우 아래 링크의 동의서 작성 부탁드립니다. https://docs.google.com/forms/d/e/1FAIpQLSdbeWkcfhxyG83TNWZk502wO1hs20jQoDxOsnZ1tjOrcPSHnw/viewform 작성 완료 후 회신 주시면 촬영 일정 안내드리겠습니다. 감사합니다.",
     "links": [
       {
         "label": "이미지 촬영 동의서 작성 (구글폼)",

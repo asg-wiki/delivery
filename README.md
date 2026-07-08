@@ -51,6 +51,7 @@ window.WIKI_DATA.coupang = [
 | pinned | X | `true`면 검색 결과 위에 공지 배너로 고정 표시 (없으면 일반 카드) |
 | favorite | X | `true`면 "⭐ 자주 찾음" 뱃지가 붙고 목록 최상단에 정렬 (없으면 일반 정렬) |
 | last_verified | X | 마지막으로 사실 확인한 날짜 (YYYY-MM-DD). 오늘로부터 90일(`config.js`의 `staleAfterDays`)이 지나면 "⚠️ 확인 필요" 뱃지가 자동으로 붙는다 |
+| copy_text | X | 있으면 상세보기 하단에 "📋 안내문 복사" 버튼이 생기고, 클릭 시 이 텍스트가 클립보드에 복사됨 (안내 문구를 사장님께 그대로 전달할 때 사용) |
 
 검색창 아래 "인기 검색어" 태그 목록은 `js/config.js`의 `popularTags` 배열에서 관리한다.
 이 배열만 수정하면 화면에 바로 반영된다.

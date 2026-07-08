@@ -57,6 +57,10 @@ function validateItem(file, index, item) {
       reportError(file, index, `${field}는 boolean(true/false)이어야 함`);
     }
   });
+
+  if (item.copy_text !== undefined && typeof item.copy_text !== 'string') {
+    reportError(file, index, 'copy_text는 문자열이어야 함');
+  }
 }
 
 // data/*.js는 `window.WIKI_DATA.<id> = [ ... ];` 형태의 스크립트 파일이다.

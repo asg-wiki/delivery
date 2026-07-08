@@ -454,6 +454,31 @@ header h1 {
   color: var(--text-muted);
 }
 
+.copy-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 14px;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  background: #e5e7eb;
+}
+
+.suggestions-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
 @media (min-width: 640px) {
   .tabs {
     overflow-x: visible;

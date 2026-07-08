@@ -230,26 +230,31 @@
     });
   }
 
-  function getFilteredItems() {
+  function getBaseItems() {
     var items = (state.data[state.platform] || []).slice();
-
     if (state.type !== '전체') {
       items = items.filter(function (item) { return item.type === state.type; });
     }
+    return items;
+  }
 
-    var terms = state.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (terms.length > 0) {
-      items = items.filter(function (item) {
-        var haystack = [
-          item.title,
-          item.category,
-          (item.tags || []).join(' '),
-          item.content
-        ].join(' ').toLowerCase();
-        return terms.every(function (term) { return haystack.indexOf(term) !== -1; });
-      });
-    }
+  function getSearchTerms() {
+    // 각 단어는 공백이 없으므로, 대상 텍스트만 공백을 제거하고 비교하면
+    // "검색어와 대상 모두 공백 무시" 비교가 자연스럽게 성립한다.
+    return state.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  }
 
+  function itemHaystackNoSpace(item) {
+    var haystack = [
+      item.title,
+      item.category,
+      (item.tags || []).join(' '),
+      item.content
+    ].join(' ').toLowerCase();
+    return haystack.replace(/\s+/g, '');
+  }
+
+  function sortItems(items) {
     items.sort(function (a, b) {
       var favA = a.favorite ? 0 : 1;
       var favB = b.favorite ? 0 : 1;
@@ -257,6 +262,34 @@
       return (a.updated < b.updated) ? 1 : (a.updated > b.updated ? -1 : 0);
     });
     return items;
+  }
+
+  function getFilteredItems() {
+    var items = getBaseItems();
+    var terms = getSearchTerms();
+
+    if (terms.length > 0) {
+      items = items.filter(function (item) {
+        var haystackNoSpace = itemHaystackNoSpace(item);
+        return terms.every(function (term) { return haystackNoSpace.indexOf(term) !== -1; });
+      });
+    }
+
+    return sortItems(items);
+  }
+
+  // 검색 결과가 0건일 때, 단어 중 하나라도 걸리는 항목을 유사도(일치한 단어 수) 순으로 최대 3건 제안.
+  function getSuggestions(terms) {
+    if (terms.length === 0) return [];
+
+    var scored = getBaseItems().map(function (item) {
+      var haystackNoSpace = itemHaystackNoSpace(item);
+      var score = terms.filter(function (term) { return haystackNoSpace.indexOf(term) !== -1; }).length;
+      return { item: item, score: score };
+    }).filter(function (s) { return s.score > 0; });
+
+    scored.sort(function (a, b) { return b.score - a.score; });
+    return scored.slice(0, 3).map(function (s) { return s.item; });
   }
 
   function renderResults() {
@@ -267,6 +300,25 @@
     els.results.innerHTML = '';
 
     if (items.length === 0) {
+      var suggestions = getSuggestions(getSearchTerms());
+
+      if (suggestions.length > 0) {
+        var suggestWrap = document.createElement('div');
+        suggestWrap.className = 'suggestions';
+
+        var suggestHeader = document.createElement('div');
+        suggestHeader.className = 'suggestions-header';
+        suggestHeader.textContent = '검색 결과가 없습니다. 혹시 이걸 찾으세요?';
+        suggestWrap.appendChild(suggestHeader);
+
+        suggestions.forEach(function (item) {
+          suggestWrap.appendChild(renderCard(item, platformConf));
+        });
+
+        els.results.appendChild(suggestWrap);
+        return;
+      }
+
       var empty = document.createElement('div');
       empty.className = 'empty-state';
       empty.innerHTML = '검색 결과가 없습니다.<br>새로운 항목 등록이 필요하면 담당자에게 요청해주세요.';
@@ -373,6 +425,17 @@
       body.appendChild(linksRow);
     }
 
+    if (item.copy_text) {
+      var copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-btn';
+      copyBtn.textContent = '📋 안내문 복사';
+      copyBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        copyToClipboard(item.copy_text);
+      });
+      body.appendChild(copyBtn);
+    }
+
     var footer = document.createElement('div');
     footer.className = 'updated-footer';
     footer.textContent = '최종 수정일: ' + item.updated;
@@ -380,6 +443,29 @@
 
     card.appendChild(body);
     return card;
+  }
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(function () { toast('복사되었습니다.', 'success'); })
+        .catch(function () { toast('복사에 실패했습니다.', 'error'); });
+      return;
+    }
+    // 클립보드 API를 쓸 수 없는 환경(예: 구형 브라우저, 비보안 컨텍스트)을 위한 대체 수단
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      toast('복사되었습니다.', 'success');
+    } catch (e) {
+      toast('복사에 실패했습니다.', 'error');
+    }
+    textarea.remove();
   }
 
   function isStale(item) {
