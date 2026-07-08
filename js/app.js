@@ -2,6 +2,7 @@
   'use strict';
 
   var ADMIN_TOKEN_KEY = 'wiki_admin_token';
+  var ADMIN_MODE_KEY = 'wiki_admin_mode';
 
   var state = {
     platform: null,
@@ -29,10 +30,17 @@
     els.toastContainer = document.getElementById('toast-container');
 
     // 관리자 모드 진입: URL이 #admin이면 활성화하고, 해시는 정상 플랫폼 라우팅을 위해 비워둔다.
+    // 이후에는 localStorage 플래그로 지속시켜, 새로고침하거나 #coupang 같은 일반 플랫폼
+    // 해시로 이동해도 관리자 모드가 풀리지 않게 한다. (로그아웃 시에만 플래그 제거)
     if (location.hash === '#admin') {
       state.isAdmin = true;
-      state.token = localStorage.getItem(ADMIN_TOKEN_KEY);
+      localStorage.setItem(ADMIN_MODE_KEY, 'true');
       history.replaceState(null, '', location.pathname + location.search);
+    } else if (localStorage.getItem(ADMIN_MODE_KEY) === 'true') {
+      state.isAdmin = true;
+    }
+    if (state.isAdmin) {
+      state.token = localStorage.getItem(ADMIN_TOKEN_KEY);
     }
 
     els.search.addEventListener('input', function (e) {
@@ -158,9 +166,12 @@
       logoutBtn.textContent = '로그아웃';
       logoutBtn.addEventListener('click', function () {
         localStorage.removeItem(ADMIN_TOKEN_KEY);
+        localStorage.removeItem(ADMIN_MODE_KEY);
         state.token = null;
+        state.isAdmin = false;
         renderAdminBar();
-        toast('로그아웃되었습니다.', 'success');
+        renderResults();
+        toast('로그아웃되었습니다. 일반 모드로 전환됩니다.', 'success');
       });
 
       bar.appendChild(notice);
@@ -426,6 +437,32 @@
     return row;
   }
 
+  // path -> { sha, text } — 각 데이터 파일의 마지막으로 확인된 상태를 기억해둔다.
+  // 우리가 직접 커밋한 직후에는 그 응답의 sha가 가장 최신이므로(별도 GET 없이) 그대로
+  // 재사용하는 편이, 매번 새로 GET하는 것보다 오히려 더 안전하다 — GitHub Contents API는
+  // 커밋 직후 곧바로 GET하면 아주 짧은 순간 이전 sha를 돌려주는 경우가 있어(읽기 지연),
+  // "항상 GET 후 PUT"도 409를 완전히 막아주지는 못한다. 캐시가 없을 때만 새로 GET하고,
+  // 그래도 409가 나면(다른 곳에서 파일이 바뀐 경우) 캐시를 버리고 한 번만 새로 GET해서 재시도한다.
+  var fileCache = {};
+
+  function getFile(path, forceRefresh) {
+    if (!forceRefresh && fileCache[path]) {
+      return Promise.resolve(fileCache[path]);
+    }
+    return githubGetFile(path).then(function (file) {
+      fileCache[path] = file;
+      return file;
+    });
+  }
+
+  function putFile(path, newText, sha, message) {
+    return githubPutFile(path, newText, sha, message).then(function (res) {
+      var newSha = res && res.content && res.content.sha ? res.content.sha : sha;
+      fileCache[path] = { text: newText, sha: newSha };
+      return res;
+    });
+  }
+
   function saveFieldChange(item, platformConf, field, value, buildMessage) {
     if (state.saving) return;
 
@@ -437,8 +474,11 @@
     state.saving = true;
     setAdminButtonsDisabled(true);
 
-    githubGetFile(platformConf.file)
-      .then(function (file) {
+    var path = platformConf.file;
+    var message = buildMessage(value);
+
+    function applyAndSave(forceRefresh) {
+      return getFile(path, forceRefresh).then(function (file) {
         var items = parseDataArray(file.text);
         var target = items.find(function (i) { return i.id === item.id; });
         if (!target) {
@@ -446,7 +486,18 @@
         }
         target[field] = value;
         var newText = replaceDataArray(file.text, items);
-        return githubPutFile(platformConf.file, newText, file.sha, buildMessage(value));
+        return putFile(path, newText, file.sha, message);
+      });
+    }
+
+    applyAndSave(false)
+      .catch(function (err) {
+        if (err && err.status === 409) {
+          // sha 충돌: 캐시를 버리고 최신 상태를 다시 받아와 한 번만 재시도한다.
+          delete fileCache[path];
+          return applyAndSave(true);
+        }
+        return Promise.reject(err);
       })
       .then(function () {
         item[field] = value;
@@ -459,6 +510,9 @@
           state.token = null;
           renderAdminBar();
           toast('토큰이 유효하지 않습니다. 다시 입력해주세요.', 'error');
+        } else if (err && err.status === 409) {
+          delete fileCache[path];
+          toast('다른 곳에서 파일이 변경되었습니다. 새로고침 후 다시 시도해주세요.', 'error');
         } else {
           toast('저장 실패: ' + (err && err.message ? err.message : '알 수 없는 오류'), 'error');
         }
