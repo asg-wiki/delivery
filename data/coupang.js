@@ -26,7 +26,7 @@ window.WIKI_DATA.coupang = [
       "온보딩"
     ],
     "updated": "2026-07-07",
-    "last_verified": "2026-07-07",
+    "last_verified": "2026-07-08",
     "pinned": true
   },
   {
