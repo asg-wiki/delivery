@@ -1,0 +1,255 @@
+:root {
+  --bg: #f5f6f8;
+  --card-bg: #ffffff;
+  --text: #1f2328;
+  --text-muted: #6b7280;
+  --border: #e2e5ea;
+  --accent: #0f6fff;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Apple SD Gothic Neo",
+    "Noto Sans KR", "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+}
+
+/* 헤더 */
+header h1 {
+  font-size: 1.25rem;
+  margin: 4px 0 16px;
+}
+
+/* 플랫폼 탭 */
+.tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab {
+  flex: 1 0 auto;
+  text-align: center;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.tab.active {
+  background: var(--tab-color, var(--accent));
+  border-color: var(--tab-color, var(--accent));
+  color: #fff;
+}
+
+.tab.empty {
+  opacity: 0.5;
+}
+
+/* 검색 */
+.search-box {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  margin-bottom: 12px;
+}
+
+.search-box:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* 유형 칩 */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.chip {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.chip.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fff;
+}
+
+/* 결과 목록 */
+.result-count {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--card-accent, var(--border));
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.card-head {
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.type-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.card-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.effective-date {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.card-body {
+  display: none;
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.card.open .card-body {
+  display: block;
+  padding-top: 14px;
+}
+
+.card-content h1, .card-content h2, .card-content h3 {
+  margin: 12px 0 6px;
+}
+
+.card-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+
+.card-content th, .card-content td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.card-content th {
+  background: #f0f1f4;
+}
+
+.card-content ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.card-content p {
+  margin: 8px 0;
+}
+
+.card-content a {
+  color: var(--accent);
+}
+
+.links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.link-btn {
+  display: inline-block;
+  padding: 8px 12px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.updated-footer {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--text-muted);
+}
+
+@media (min-width: 640px) {
+  .tabs {
+    overflow-x: visible;
+  }
+  .tab {
+    flex: 1;
+  }
+}
