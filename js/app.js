@@ -1,12 +1,17 @@
 (function () {
   'use strict';
 
+  var ADMIN_TOKEN_KEY = 'wiki_admin_token';
+
   var state = {
     platform: null,
     query: '',
     type: '전체',
     data: {}, // platformId -> array of items
-    openIds: {} // item id -> true if expanded
+    openIds: {}, // item id -> true if expanded
+    isAdmin: false,
+    token: null,
+    saving: false
   };
 
   var els = {};
@@ -20,6 +25,15 @@
     els.chips = document.getElementById('chips');
     els.results = document.getElementById('results');
     els.resultCount = document.getElementById('result-count');
+    els.adminBar = document.getElementById('admin-bar');
+    els.toastContainer = document.getElementById('toast-container');
+
+    // 관리자 모드 진입: URL이 #admin이면 활성화하고, 해시는 정상 플랫폼 라우팅을 위해 비워둔다.
+    if (location.hash === '#admin') {
+      state.isAdmin = true;
+      state.token = localStorage.getItem(ADMIN_TOKEN_KEY);
+      history.replaceState(null, '', location.pathname + location.search);
+    }
 
     els.search.addEventListener('input', function (e) {
       state.query = e.target.value;
@@ -37,6 +51,7 @@
       renderTabs();
       renderChips();
       renderPopularTags();
+      renderAdminBar();
       renderResults();
     });
   }
@@ -97,6 +112,79 @@
         location.hash = p.id;
       });
       els.tabs.appendChild(btn);
+    });
+  }
+
+  function renderAdminBar() {
+    if (!els.adminBar) return;
+    els.adminBar.innerHTML = '';
+    if (!state.isAdmin) return;
+
+    var bar = document.createElement('div');
+    bar.className = 'admin-bar';
+
+    if (!state.token) {
+      var label = document.createElement('span');
+      label.className = 'admin-bar-label';
+      label.textContent = '🔧 관리자 모드 — GitHub Personal Access Token을 입력하세요:';
+
+      var input = document.createElement('input');
+      input.type = 'password';
+      input.className = 'admin-token-input';
+      input.placeholder = 'ghp_... 또는 github_pat_...';
+
+      var saveBtn = document.createElement('button');
+      saveBtn.className = 'admin-btn';
+      saveBtn.textContent = '저장';
+      saveBtn.addEventListener('click', function () {
+        var value = input.value.trim();
+        if (!value) return;
+        localStorage.setItem(ADMIN_TOKEN_KEY, value);
+        state.token = value;
+        renderAdminBar();
+        toast('토큰이 저장되었습니다.', 'success');
+      });
+
+      bar.appendChild(label);
+      bar.appendChild(input);
+      bar.appendChild(saveBtn);
+    } else {
+      var notice = document.createElement('span');
+      notice.className = 'admin-bar-label';
+      notice.textContent = '🔧 관리자 모드 — 저장 후 GitHub Pages에 반영되기까지 1~2분 정도 걸릴 수 있습니다.';
+
+      var logoutBtn = document.createElement('button');
+      logoutBtn.className = 'admin-btn admin-btn-logout';
+      logoutBtn.textContent = '로그아웃';
+      logoutBtn.addEventListener('click', function () {
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        state.token = null;
+        renderAdminBar();
+        toast('로그아웃되었습니다.', 'success');
+      });
+
+      bar.appendChild(notice);
+      bar.appendChild(logoutBtn);
+    }
+
+    els.adminBar.appendChild(bar);
+  }
+
+  function toast(message, type) {
+    if (!els.toastContainer) return;
+    var el = document.createElement('div');
+    el.className = 'toast ' + (type === 'error' ? 'toast-error' : 'toast-success');
+    el.textContent = message;
+    els.toastContainer.appendChild(el);
+    setTimeout(function () {
+      el.classList.add('toast-hide');
+      setTimeout(function () { el.remove(); }, 300);
+    }, 3000);
+  }
+
+  function setAdminButtonsDisabled(disabled) {
+    document.querySelectorAll('.admin-toggle').forEach(function (btn) {
+      btn.disabled = disabled;
     });
   }
 
@@ -231,7 +319,8 @@
     meta.innerHTML =
       '<span>' + escapeHtml(item.category) + '</span>' +
       '<span>수정일: ' + escapeHtml(item.updated) + '</span>' +
-      (item.effective_date ? '<span class="effective-date">적용일: ' + escapeHtml(item.effective_date) + '</span>' : '');
+      (item.effective_date ? '<span class="effective-date">적용일: ' + escapeHtml(item.effective_date) + '</span>' : '') +
+      (isStale(item) ? '<span class="stale-badge">⚠️ 확인 필요 (마지막 확인: ' + escapeHtml(item.last_verified) + ')</span>' : '');
     head.appendChild(meta);
 
     var preview = document.createElement('p');
@@ -243,6 +332,10 @@
       state.openIds[item.id] = !state.openIds[item.id];
       card.classList.toggle('open');
     });
+
+    if (state.isAdmin) {
+      head.appendChild(renderAdminActions(item, platformConf));
+    }
 
     card.appendChild(head);
 
@@ -276,6 +369,187 @@
 
     card.appendChild(body);
     return card;
+  }
+
+  function isStale(item) {
+    if (!item.last_verified) return false;
+    var lastMs = new Date(item.last_verified + 'T00:00:00').getTime();
+    if (isNaN(lastMs)) return false;
+    var diffDays = (Date.now() - lastMs) / (24 * 60 * 60 * 1000);
+    return diffDays > (CONFIG.staleAfterDays || 90);
+  }
+
+  // ---- 관리자 모드: 카드별 토글 버튼 + GitHub Contents API 저장 ----
+
+  function renderAdminActions(item, platformConf) {
+    var row = document.createElement('div');
+    row.className = 'admin-actions';
+    row.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    var pinBtn = document.createElement('button');
+    pinBtn.className = 'admin-toggle';
+    pinBtn.textContent = item.pinned ? '📌 공지 해제' : '📌 공지 고정';
+    pinBtn.addEventListener('click', function () {
+      saveFieldChange(item, platformConf, 'pinned', !item.pinned, function (value) {
+        return '관리자: ' + item.title + (value ? ' 공지 고정' : ' 공지 고정 해제');
+      });
+    });
+    row.appendChild(pinBtn);
+
+    var favBtn = document.createElement('button');
+    favBtn.className = 'admin-toggle';
+    favBtn.textContent = item.favorite ? '⭐ 자주 찾음 해제' : '⭐ 자주 찾음 지정';
+    favBtn.addEventListener('click', function () {
+      saveFieldChange(item, platformConf, 'favorite', !item.favorite, function (value) {
+        return '관리자: ' + item.title + (value ? ' 자주 찾음 지정' : ' 자주 찾음 해제');
+      });
+    });
+    row.appendChild(favBtn);
+
+    var verifyBtn = document.createElement('button');
+    verifyBtn.className = 'admin-toggle';
+    verifyBtn.textContent = '✅ 확인일 갱신';
+    verifyBtn.addEventListener('click', function () {
+      var today = todayStr();
+      saveFieldChange(item, platformConf, 'last_verified', today, function () {
+        return '관리자: ' + item.title + ' 확인일 갱신 (' + today + ')';
+      });
+    });
+    row.appendChild(verifyBtn);
+
+    if (state.saving) {
+      pinBtn.disabled = true;
+      favBtn.disabled = true;
+      verifyBtn.disabled = true;
+    }
+
+    return row;
+  }
+
+  function saveFieldChange(item, platformConf, field, value, buildMessage) {
+    if (state.saving) return;
+
+    if (!state.token) {
+      toast('먼저 GitHub 토큰을 입력해주세요.', 'error');
+      return;
+    }
+
+    state.saving = true;
+    setAdminButtonsDisabled(true);
+
+    githubGetFile(platformConf.file)
+      .then(function (file) {
+        var items = parseDataArray(file.text);
+        var target = items.find(function (i) { return i.id === item.id; });
+        if (!target) {
+          throw new Error('원격 데이터에서 항목(' + item.id + ')을 찾을 수 없습니다.');
+        }
+        target[field] = value;
+        var newText = replaceDataArray(file.text, items);
+        return githubPutFile(platformConf.file, newText, file.sha, buildMessage(value));
+      })
+      .then(function () {
+        item[field] = value;
+        toast('저장되었습니다.', 'success');
+        renderResults();
+      })
+      .catch(function (err) {
+        if (err && (err.status === 401 || err.status === 403)) {
+          localStorage.removeItem(ADMIN_TOKEN_KEY);
+          state.token = null;
+          renderAdminBar();
+          toast('토큰이 유효하지 않습니다. 다시 입력해주세요.', 'error');
+        } else {
+          toast('저장 실패: ' + (err && err.message ? err.message : '알 수 없는 오류'), 'error');
+        }
+      })
+      .finally(function () {
+        state.saving = false;
+        setAdminButtonsDisabled(false);
+      });
+  }
+
+  function todayStr() {
+    var d = new Date();
+    var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  // data/*.js는 `window.WIKI_DATA.<id> = [ ... ];` 형태다. 주석에는 대괄호를 쓰지 않는다는
+  // 규칙을 전제로, 첫 '['부터 마지막 ']'까지를 배열 영역으로 보고 그 부분만 치환한다.
+  function parseDataArray(raw) {
+    var start = raw.indexOf('[');
+    var end = raw.lastIndexOf(']');
+    return JSON.parse(raw.slice(start, end + 1));
+  }
+
+  function replaceDataArray(raw, items) {
+    var start = raw.indexOf('[');
+    var end = raw.lastIndexOf(']');
+    return raw.slice(0, start) + JSON.stringify(items, null, 2) + raw.slice(end + 1);
+  }
+
+  function githubGetFile(path) {
+    var url = 'https://api.github.com/repos/' + CONFIG.github.owner + '/' + CONFIG.github.repo +
+      '/contents/' + path + '?ref=' + CONFIG.github.branch;
+    return fetch(url, {
+      headers: {
+        'Authorization': 'Bearer ' + state.token,
+        'Accept': 'application/vnd.github+json'
+      }
+    }).then(function (res) {
+      if (!res.ok) {
+        return Promise.reject(makeHttpError(res));
+      }
+      return res.json();
+    }).then(function (data) {
+      return { text: b64DecodeUnicode(data.content), sha: data.sha };
+    });
+  }
+
+  function githubPutFile(path, content, sha, message) {
+    var url = 'https://api.github.com/repos/' + CONFIG.github.owner + '/' + CONFIG.github.repo + '/contents/' + path;
+    return fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + state.token,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: message,
+        content: b64EncodeUnicode(content),
+        sha: sha,
+        branch: CONFIG.github.branch
+      })
+    }).then(function (res) {
+      if (!res.ok) {
+        return Promise.reject(makeHttpError(res));
+      }
+      return res.json();
+    });
+  }
+
+  function makeHttpError(res) {
+    var err = new Error('GitHub API 오류 (HTTP ' + res.status + ')');
+    err.status = res.status;
+    return err;
+  }
+
+  function b64DecodeUnicode(base64) {
+    var binary = atob(base64.replace(/\n/g, ''));
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+
+  function b64EncodeUnicode(str) {
+    var bytes = new TextEncoder().encode(str);
+    var binary = '';
+    bytes.forEach(function (b) { binary += String.fromCharCode(b); });
+    return btoa(binary);
   }
 
   // 카드 미리보기용: 마크다운 기호를 제거하고 한 문단짜리 순수 텍스트로 변환

@@ -50,6 +50,7 @@ window.WIKI_DATA.coupang = [
 | updated | O | 최종 수정일 (YYYY-MM-DD) |
 | pinned | X | `true`면 검색 결과 위에 공지 배너로 고정 표시 (없으면 일반 카드) |
 | favorite | X | `true`면 "⭐ 자주 찾음" 뱃지가 붙고 목록 최상단에 정렬 (없으면 일반 정렬) |
+| last_verified | X | 마지막으로 사실 확인한 날짜 (YYYY-MM-DD). 오늘로부터 90일(`config.js`의 `staleAfterDays`)이 지나면 "⚠️ 확인 필요" 뱃지가 자동으로 붙는다 |
 
 검색창 아래 "인기 검색어" 태그 목록은 `js/config.js`의 `popularTags` 배열에서 관리한다.
 이 배열만 수정하면 화면에 바로 반영된다.
@@ -124,7 +125,42 @@ node scripts/validate.js
    `config.js`에 적은 `id` 값과 반드시 일치해야 한다). `index.html`이나 `app.js`는
    수정할 필요 없다 — 데이터 파일은 화면 코드가 자동으로 읽어온다.
 
-## 7. 폴더 구조
+## 7. 관리자 모드 (사이트에서 직접 데이터 수정)
+
+사이트 URL 뒤에 `#admin`을 붙여 접속하면 (예: `https://asg-wiki.github.io/delivery/#admin`)
+관리자 모드가 켜지고, 카드마다 아래 토글 버튼이 나타난다.
+
+- **📌 공지 고정/해제** → `pinned` 값을 true/false로 전환
+- **⭐ 자주 찾음 지정/해제** → `favorite` 값을 true/false로 전환
+- **✅ 확인일 갱신** → `last_verified`를 오늘 날짜로 갱신
+
+버튼을 누르면 GitHub Contents API로 `data/*.js` 파일을 직접 읽어와 해당 항목만 수정한 뒤
+바로 커밋한다. 저장 성공/실패는 화면 하단 토스트 메시지로 표시되고, 화면은 새로고침 없이
+즉시 갱신된다. 단, **GitHub Pages에 실제로 반영되기까지는 1~2분 정도 걸릴 수 있다**
+(관리자 모드 상단 배너에도 안내됨).
+
+### 최초 진입 시 GitHub 토큰 입력
+
+관리자 모드 첫 진입 시(또는 로그아웃 후) 화면 상단에 GitHub Personal Access Token
+입력창이 뜬다. 아래 권한으로 fine-grained PAT를 발급해 입력한다.
+
+1. GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token
+2. **Repository access**: `asg-wiki/delivery` 저장소만 선택
+3. **Permissions**: Repository permissions → **Contents: Read and write**
+4. 생성된 토큰을 입력창에 붙여넣고 "저장" 클릭
+
+입력한 토큰은 **브라우저의 localStorage에만 저장**되며 코드/저장소 어디에도 기록되지
+않는다. 다른 사람 PC나 공용 PC에서 사용했다면 반드시 상단의 **"로그아웃"** 버튼으로
+토큰을 삭제한다. 토큰이 만료되었거나 잘못된 경우 API가 401/403을 반환하면 자동으로
+토큰을 지우고 재입력을 요청한다.
+
+### 주의사항
+
+- `#admin` 없이 접속한 일반 사용자 화면에는 토글 버튼, 배너 등 관리자 요소가 전혀 보이지 않는다.
+- 저장 중에는 다른 카드의 토글 버튼도 잠시 비활성화되어 동시 수정으로 인한 충돌을 막는다.
+- 저장소/브랜치 정보는 `js/config.js`의 `github` 설정(`owner`, `repo`, `branch`)에서 관리한다.
+
+## 8. 폴더 구조
 
 ```
 delivery-wiki/

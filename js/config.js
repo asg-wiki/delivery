@@ -20,5 +20,15 @@ const CONFIG = {
   },
 
   // 검색창 아래 인기 검색어 태그. 이 배열만 수정하면 화면에 바로 반영됨.
-  popularTags: ['해피콜', '상태값', '리뷰이관', '서류', '반려', '촬영']
+  popularTags: ['해피콜', '상태값', '리뷰이관', '서류', '반려', '촬영'],
+
+  // 관리자 모드(#admin)에서 GitHub Contents API로 data/*.js를 직접 수정할 때 사용하는 저장소 정보.
+  github: {
+    owner: 'asg-wiki',
+    repo: 'delivery',
+    branch: 'main'
+  },
+
+  // 일반 사용자 화면에서 "확인 필요" 뱃지를 띄우는 기준 (일)
+  staleAfterDays: 90
 };

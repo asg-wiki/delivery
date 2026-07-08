@@ -40,6 +40,10 @@ function validateItem(file, index, item) {
     reportError(file, index, `updated 형식 오류 - "${item.updated}" (YYYY-MM-DD 여야 함)`);
   }
 
+  if (item.last_verified !== undefined && item.last_verified !== null && !DATE_RE.test(item.last_verified)) {
+    reportError(file, index, `last_verified 형식 오류 - "${item.last_verified}" (YYYY-MM-DD 여야 함)`);
+  }
+
   if (item.tags && !Array.isArray(item.tags)) {
     reportError(file, index, 'tags는 배열이어야 함');
   }
