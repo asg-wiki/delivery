@@ -16,6 +16,7 @@
   function init() {
     els.tabs = document.getElementById('tabs');
     els.search = document.getElementById('search');
+    els.popularTags = document.getElementById('popular-tags');
     els.chips = document.getElementById('chips');
     els.results = document.getElementById('results');
     els.resultCount = document.getElementById('result-count');
@@ -35,6 +36,7 @@
       applyHashPlatform();
       renderTabs();
       renderChips();
+      renderPopularTags();
       renderResults();
     });
   }
@@ -98,6 +100,21 @@
     });
   }
 
+  function renderPopularTags() {
+    els.popularTags.innerHTML = '';
+    (CONFIG.popularTags || []).forEach(function (tag) {
+      var btn = document.createElement('button');
+      btn.className = 'popular-tag';
+      btn.textContent = '#' + tag;
+      btn.addEventListener('click', function () {
+        els.search.value = tag;
+        state.query = tag;
+        renderResults();
+      });
+      els.popularTags.appendChild(btn);
+    });
+  }
+
   function renderChips() {
     els.chips.innerHTML = '';
     var allTypes = ['전체'].concat(CONFIG.types);
@@ -134,7 +151,12 @@
       });
     }
 
-    items.sort(function (a, b) { return (a.updated < b.updated) ? 1 : (a.updated > b.updated ? -1 : 0); });
+    items.sort(function (a, b) {
+      var favA = a.favorite ? 0 : 1;
+      var favB = b.favorite ? 0 : 1;
+      if (favA !== favB) return favA - favB;
+      return (a.updated < b.updated) ? 1 : (a.updated > b.updated ? -1 : 0);
+    });
     return items;
   }
 
@@ -142,7 +164,7 @@
     var items = getFilteredItems();
     var platformConf = CONFIG.platforms.find(function (p) { return p.id === state.platform; });
 
-    els.resultCount.textContent = items.length + '건';
+    els.resultCount.textContent = '검색 결과 ' + items.length + '건';
     els.results.innerHTML = '';
 
     if (items.length === 0) {
@@ -153,14 +175,22 @@
       return;
     }
 
-    items.forEach(function (item) {
+    var pinnedItems = items.filter(function (item) { return item.pinned; });
+    var normalItems = items.filter(function (item) { return !item.pinned; });
+
+    pinnedItems.forEach(function (item) {
+      els.results.appendChild(renderCard(item, platformConf));
+    });
+    normalItems.forEach(function (item) {
       els.results.appendChild(renderCard(item, platformConf));
     });
   }
 
   function renderCard(item, platformConf) {
     var card = document.createElement('div');
-    card.className = 'card' + (state.openIds[item.id] ? ' open' : '');
+    card.className = 'card' +
+      (state.openIds[item.id] ? ' open' : '') +
+      (item.pinned ? ' pinned' : '');
     card.style.setProperty('--card-accent', platformConf ? platformConf.color : '#ccc');
 
     var head = document.createElement('div');
@@ -169,11 +199,25 @@
     var topRow = document.createElement('div');
     topRow.className = 'card-top-row';
 
+    if (item.pinned) {
+      var pinBadge = document.createElement('span');
+      pinBadge.className = 'pin-badge';
+      pinBadge.textContent = '📌 공지';
+      topRow.appendChild(pinBadge);
+    }
+
     var badge = document.createElement('span');
     badge.className = 'type-badge';
     badge.style.background = CONFIG.typeColors[item.type] || '#6b7280';
     badge.textContent = item.type;
     topRow.appendChild(badge);
+
+    if (item.favorite) {
+      var favBadge = document.createElement('span');
+      favBadge.className = 'favorite-badge';
+      favBadge.textContent = '⭐ 자주 찾음';
+      topRow.appendChild(favBadge);
+    }
 
     var title = document.createElement('p');
     title.className = 'card-title';
@@ -189,6 +233,11 @@
       '<span>수정일: ' + escapeHtml(item.updated) + '</span>' +
       (item.effective_date ? '<span class="effective-date">적용일: ' + escapeHtml(item.effective_date) + '</span>' : '');
     head.appendChild(meta);
+
+    var preview = document.createElement('p');
+    preview.className = 'card-preview' + (item.pinned ? ' one-line' : '');
+    preview.textContent = toPlainPreview(item.content);
+    head.appendChild(preview);
 
     head.addEventListener('click', function () {
       state.openIds[item.id] = !state.openIds[item.id];
@@ -227,6 +276,20 @@
 
     card.appendChild(body);
     return card;
+  }
+
+  // 카드 미리보기용: 마크다운 기호를 제거하고 한 문단짜리 순수 텍스트로 변환
+  function toPlainPreview(md) {
+    if (!md) return '';
+    return md
+      .replace(/^#{1,3}\s+/gm, '')
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/^[-*]\s+/gm, '')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+      .replace(/\|/g, ' ')
+      .replace(/-{2,}/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   // ---- 경량 마크다운 렌더러 (제목/굵게/리스트/표/줄바꿈/링크) ----

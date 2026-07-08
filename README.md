@@ -48,6 +48,11 @@ window.WIKI_DATA.coupang = [
 | links | X | 외부 링크 배열. 없으면 빈 배열 `[]` |
 | tags | O | 검색에 걸리길 원하는 동의어를 넉넉하게 등록 |
 | updated | O | 최종 수정일 (YYYY-MM-DD) |
+| pinned | X | `true`면 검색 결과 위에 공지 배너로 고정 표시 (없으면 일반 카드) |
+| favorite | X | `true`면 "⭐ 자주 찾음" 뱃지가 붙고 목록 최상단에 정렬 (없으면 일반 정렬) |
+
+검색창 아래 "인기 검색어" 태그 목록은 `js/config.js`의 `popularTags` 배열에서 관리한다.
+이 배열만 수정하면 화면에 바로 반영된다.
 
 content(마크다운 표) 작성 예시:
 

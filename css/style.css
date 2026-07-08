@@ -28,27 +28,31 @@ body {
 .wrap {
   max-width: 860px;
   margin: 0 auto;
-  padding: 16px 16px 48px;
+  padding: 20px 18px 56px;
 }
 
 /* 헤더 */
 header h1 {
   font-size: 1.25rem;
-  margin: 4px 0 16px;
+  margin: 4px 0 20px;
 }
 
 /* 플랫폼 탭 */
 .tabs {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
   padding-bottom: 4px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   -webkit-overflow-scrolling: touch;
 }
 
 .tab {
   flex: 1 0 auto;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: 10px 14px;
   border: 1px solid var(--border);
@@ -80,7 +84,7 @@ header h1 {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card-bg);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .search-box:focus {
@@ -88,16 +92,45 @@ header h1 {
   outline-offset: -1px;
 }
 
+/* 인기 검색어 태그 */
+.popular-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.popular-tag {
+  padding: 6px 12px;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #eef2ff;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.popular-tag:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* 유형 칩 */
 .chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .chip {
-  padding: 6px 12px;
+  padding: 8px 14px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card-bg);
@@ -114,9 +147,10 @@ header h1 {
 
 /* 결과 목록 */
 .result-count {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
 }
 
 .card {
@@ -124,16 +158,33 @@ header h1 {
   border: 1px solid var(--border);
   border-top: 3px solid var(--card-accent, var(--border));
   border-radius: var(--radius);
-  margin-bottom: 10px;
+  margin-bottom: 14px;
   overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.card.pinned {
+  background: #fffbeb;
+  border-color: #fde68a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .card-head {
-  padding: 14px 16px;
+  padding: 16px 18px;
+  min-height: 44px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.card-head:hover {
+  background: #f8fafc;
+}
+
+.card.pinned .card-head:hover {
+  background: #fef3c7;
 }
 
 .card-top-row {
@@ -152,10 +203,35 @@ header h1 {
   white-space: nowrap;
 }
 
+.pin-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: #dc2626;
+  white-space: nowrap;
+}
+
+.favorite-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #92400e;
+  background: #fef3c7;
+  white-space: nowrap;
+}
+
 .card-title {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   margin: 0;
+  transition: color 0.15s;
+}
+
+.card-head:hover .card-title {
+  color: var(--accent);
 }
 
 .card-meta {
@@ -169,6 +245,25 @@ header h1 {
 .effective-date {
   color: #b91c1c;
   font-weight: 600;
+}
+
+.card-preview {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.card-preview.one-line {
+  -webkit-line-clamp: 1;
+  font-size: 0.88rem;
+}
+
+.card.open .card-preview {
+  display: none;
 }
 
 .card-body {

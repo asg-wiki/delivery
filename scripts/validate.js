@@ -47,6 +47,12 @@ function validateItem(file, index, item) {
   if (item.links && !Array.isArray(item.links)) {
     reportError(file, index, 'links는 배열이어야 함');
   }
+
+  ['pinned', 'favorite'].forEach((field) => {
+    if (item[field] !== undefined && typeof item[field] !== 'boolean') {
+      reportError(file, index, `${field}는 boolean(true/false)이어야 함`);
+    }
+  });
 }
 
 // data/*.js는 `window.WIKI_DATA.<id> = [ ... ];` 형태의 스크립트 파일이다.
