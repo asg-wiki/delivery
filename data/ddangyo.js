@@ -1,3 +1,19 @@
 // 땡겨요 데이터. 아래 배열 안 내용만 추가/수정하면 됩니다.
 window.WIKI_DATA = window.WIKI_DATA || {};
-window.WIKI_DATA.ddangyo = [];
+window.WIKI_DATA.ddangyo = [
+  {
+    "id": "dg-01",
+    "platform": "땡겨요",
+    "type": "프로세스",
+    "category": "계약서",
+    "title": "땡겨요 계약서 및 점주 동의 절차",
+    "effective_date": null,
+    "content": "- 계약서 및 점주 동의 링크의 유효 기간은 발송일 포함 3일\n- 점주가 \"계약서를 못 받았다\" / \"메시지 링크가 안 왔다\"고 하면, 재전송 및 대표번호 차단 여부부터 확인\n- ⚠️ AML을 먼저 진행한 후 계약서를 작성하면 시스템상 미진행 상태로 확인되는 경우가 있어, 점주가 계약서에 동의한 이후 AML을 진행하는 것이 좋음\n- 계약서는 점주에게 메시지로 발송되며 링크 클릭 시 확인 가능\n- 외국인 등 소통이 어려운 점주의 경우, 링크 자체를 메시지로 전달받아 대리 진행 가능",
+    "links": [],
+    "tags": ["땡겨요", "계약서", "AML", "점주동의", "링크유효기간"],
+    "updated": "2026-07-10",
+    "last_verified": "2026-07-10",
+    "pinned": false,
+    "favorite": false
+  }
+];
