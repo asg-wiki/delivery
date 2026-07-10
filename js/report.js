@@ -34,12 +34,10 @@
       '  <form class="report-form">' +
       '    <label class="report-label">관련 플랫폼' +
       '      <select class="report-select" name="platform">' +
-      '        <option value="">선택안함</option>' +
-      '        <option value="배달의민족">배달의민족</option>' +
       '        <option value="쿠팡이츠">쿠팡이츠</option>' +
+      '        <option value="배달의민족">배달의민족</option>' +
       '        <option value="요기요">요기요</option>' +
       '        <option value="땡겨요">땡겨요</option>' +
-      '        <option value="공통">공통</option>' +
       '      </select>' +
       '    </label>' +
       '    <label class="report-label">제보 내용 *' +
