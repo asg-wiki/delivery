@@ -74,7 +74,7 @@ window.WIKI_DATA.coupang = [
       "신규매장"
     ],
     "updated": "2026-07-07",
-    "last_verified": "2026-07-08",
+    "last_verified": "2026-07-14",
     "favorite": true
   },
   {
