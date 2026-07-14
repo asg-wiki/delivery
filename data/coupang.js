@@ -75,7 +75,7 @@ window.WIKI_DATA.coupang = [
     ],
     "updated": "2026-07-07",
     "last_verified": "2026-07-14",
-    "favorite": true
+    "favorite": false
   },
   {
     "id": "coupang-happycall-process",
